@@ -1,6 +1,7 @@
 {
-  "name": "TripMitra – Smart Trip Settlement",
+  "name": "TripMitra",
   "short_name": "TripMitra",
+  "description": "Smart Trip Settlement App",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f6fb",
@@ -9,15 +10,19 @@
   "icons": [
     {
       "src": "./logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
       "src": "./logo.png",
-      "sizes": "192x192",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "./logo.png",
+      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
   ]
 }
