@@ -1,0 +1,27 @@
+{
+  "trips": [
+    {
+      "id": "trip-demo-1",
+      "name": "Goa Trip 2025",
+      "startDate": "2025-01-10",
+      "endDate": "2025-01-15",
+      "initialCashPool": 0,
+      "members": [
+        { "id": "m1", "name": "Rahul" },
+        { "id": "m2", "name": "Amit" },
+        { "id": "m3", "name": "Sagar" },
+        { "id": "m4", "name": "Prasad" }
+      ],
+      "expenses": [
+        { "id": "e1", "description": "Petrol", "amount": 3000, "category": "Fuel", "paidById": "m1", "splitAmongIds": ["m1", "m2", "m3", "m4"], "date": "2025-01-10", "isCash": true },
+        { "id": "e2", "description": "Hotel Stay", "amount": 8000, "category": "Stay", "paidById": "m2", "splitAmongIds": ["m1", "m2", "m3", "m4"], "date": "2025-01-10", "isCash": false },
+        { "id": "e3", "description": "Dinner", "amount": 2000, "category": "Food", "paidById": "m3", "splitAmongIds": ["m1", "m2", "m3", "m4"], "date": "2025-01-11", "isCash": true },
+        { "id": "e4", "description": "Tickets", "amount": 1600, "category": "Tickets", "paidById": "m4", "splitAmongIds": ["m1", "m2", "m3", "m4"], "date": "2025-01-12", "isCash": false }
+      ],
+      "cashTransactions": [
+        { "id": "c1", "type": "receive", "amount": 5000, "memberId": "m1", "note": "Cash added to pool", "date": "2025-01-10" },
+        { "id": "c2", "type": "issue", "amount": 1000, "memberId": "m2", "note": "Given for shopping", "date": "2025-01-11" }
+      ]
+    }
+  ]
+}
