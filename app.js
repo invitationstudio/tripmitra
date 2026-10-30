@@ -1168,3 +1168,37 @@ document.addEventListener('keydown', function(e) {
     }
   }
 });
+// ===================== PWA INSTALL LOGIC =====================
+let deferredPrompt;
+const installAppBtn = document.getElementById('installAppBtn');
+
+// जेव्हा ब्राउझर ॲप इन्स्टॉल करण्यासाठी तयार असेल तेव्हा हे इव्हेंट रन होतं
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // बटण दाखवा
+  if (installAppBtn) {
+    installAppBtn.style.display = 'block';
+  }
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      if (choiceResult.outcome === 'accepted') {
+        console.log('User accepted the install prompt');
+      }
+      deferredPrompt = null;
+      if (installAppBtn) installAppBtn.style.display = 'none';
+    });
+  } else {
+    alert("तुमचा ब्राउझर थेट इन्स्टॉलला सपोर्ट करत नाही किंवा ॲप आधीच इन्स्टॉल झालं आहे. कृपया ब्राउझरच्या उजव्या कोपऱ्यातील ३ ठिपक्यांवर क्लिक करून 'Add to Home Screen' निवडा.");
+  }
+}
+
+// जेव्हा ॲप इन्स्टॉल होईल तेव्हा बटण लपवून टाका
+window.addEventListener('appinstalled', () => {
+  if (installAppBtn) installAppBtn.style.display = 'none';
+  deferredPrompt = null;
+});
