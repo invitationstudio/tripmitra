@@ -986,55 +986,43 @@ function renderSettlement() {
 function openSettingsModal() { 
   history.pushState({ modal: true }, "", "");
   document.getElementById("settingsModal").classList.add("active"); 
-}
-function closeSettingsModal() { document.getElementById("settingsModal").classList.remove("active"); document.getElementById("restoreFile").value = ""; }
-
-function backupData() {
-  const dataStr = JSON.stringify(appData, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `trip_hisab_backup_${new Date().toISOString().slice(0, 10)}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function restoreData() {
-  const file = document.getElementById("restoreFile").files[0];
-  if (!file) return alert("Please select a .json backup file.");
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    try {
-      const parsedData = JSON.parse(e.target.result);
-      if (!parsedData.trips) throw new Error("Invalid file format.");
-      appData = parsedData;
-      currentTrip = appData.trips[0] || null;
-      if (currentTrip && !currentTrip.cashTransactions) currentTrip.cashTransactions = [];
-      saveData();
-      if (currentTrip) { init(); alert("✅ Data restored!"); } 
-      else { alert("✅ Restored but no trips found."); location.reload(); }
-      closeSettingsModal();
-    } catch (err) { alert("❌ Restore failed: " + err.message); }
-  };
-  reader.readAsText(file);
-}
-
-function clearAllData() {
-  const confirm1 = confirm("⚠️ WARNING: This will permanently delete all data. Are you sure?");
-  if (!confirm1) return;
-  const confirm2 = prompt("Type 'DELETE' to confirm:");
-  if (confirm2 !== "DELETE") return alert("Clear data cancelled.");
-
-  localStorage.removeItem("tripHisabData");
-  sessionStorage.setItem("isCleared", "true"); 
-
-  closeSettingsModal();
-  alert("🗑️ All data cleared successfully.");
   
-  location.reload(); 
+  // Settings madhil sagli buttons punha load kara (Jene index.html madhe chuk asli tari chalel)
+  document.getElementById("settingsModal").querySelector('.modal-box').innerHTML = `
+    <h3>⚙️ Settings</h3>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+      
+      <!-- INSTALL APP BUTTON -->
+      <button id="installAppBtn" class="btn-primary" style="background: #4f46e5; display: none;" onclick="installApp()">
+        📲 Install App
+      </button>
+      
+      <!-- BACKUP BUTTON -->
+      <button class="btn-primary" style="background: #16a34a;" onclick="backupData()">
+        📥 Backup Data (Download JSON)
+      </button>
+
+      <!-- RESTORE SECTION -->
+      <div style="border: 1px solid #ccc; padding: 10px; border-radius: 8px; background: #f9f9f9;">
+        <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">📤 Restore Data</p>
+        <input type="file" id="restoreFile" accept=".json" style="font-size: 12px; width: 100%; margin-bottom: 8px;" />
+        <button class="btn-sm" style="width: 100%;" onclick="restoreData()">Upload & Restore</button>
+      </div>
+
+      <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;" />
+      
+      <!-- CLEAR DATA BUTTON -->
+      <button class="btn-primary" style="background: #dc2626;" onclick="clearAllData()">
+        🗑️ Clear All Data
+      </button>
+    </div>
+    <button class="btn-sm outline" style="width: 100%; margin-top: 15px;" onclick="closeSettingsModal()">Close</button>
+  `;
+
+  // Jar install event aadhi jhala asel tar button dakhav
+  if (deferredPrompt) {
+    document.getElementById("installAppBtn").style.display = "block";
+  }
 }
 
 // ===================== BACK SHORTCUT & MOBILE BACK HANDLING =====================

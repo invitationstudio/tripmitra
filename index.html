@@ -116,16 +116,11 @@
     </div>
   </div>
 
-  <!-- SETTINGS MODAL -->
-  <div id="settingsModal" class="modal-overlay">
-    <div class="modal-box">
-      <h3>⚙️ Settings</h3>
-  <!-- SETTINGS MODAL -->
+    <!-- SETTINGS MODAL -->
   <div id="settingsModal" class="modal-overlay">
     <div class="modal-box">
       <h3>⚙️ Settings</h3>
       <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-        
         <!-- NAVIN INSTALL BUTTON ITHE TAKA -->
         <button id="installAppBtn" class="btn-primary" style="background: #4f46e5; display: none;" onclick="installApp()">
           📲 Install App
@@ -134,22 +129,23 @@
         <button class="btn-primary" style="background: #16a34a;" onclick="backupData()">
           📥 Backup Data (Download JSON)
         </button>
-        <!-- बाकीचा कोड तसाच ठेवा... -->
-      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-        <button class="btn-primary" style="background: #16a34a;" onclick="backupData()">📥 Backup Data (Download JSON)</button>
         <div style="border: 1px solid #ccc; padding: 10px; border-radius: 8px; background: #f9f9f9;">
           <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">📤 Restore Data</p>
           <input type="file" id="restoreFile" accept=".json" style="font-size: 12px; width: 100%; margin-bottom: 8px;" />
           <button class="btn-sm" style="width: 100%;" onclick="restoreData()">Upload & Restore</button>
         </div>
         <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;" />
-        <button class="btn-primary" style="background: #dc2626;" onclick="clearAllData()">🗑️ Clear All Data</button>
+        <button class="btn-primary" style="background: #dc2626;" onclick="clearAllData()">
+          🗑️ Clear All Data
+        </button>
       </div>
       <button class="btn-sm outline" style="width: 100%; margin-top: 15px;" onclick="closeSettingsModal()">Close</button>
     </div>
   </div>
 
   <script src="app.js"></script>
+  
+  <!-- Service Worker Register -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
