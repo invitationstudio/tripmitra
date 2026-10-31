@@ -13,12 +13,10 @@ let longPressTimer;
 
 // ===================== LOAD DATA =====================
 async function loadData() {
-  const isCleared = sessionStorage.getItem("isCleared");
+  // जुना isCleared चा भाग काढून टाकला आहे
   const savedData = localStorage.getItem("tripHisabData");
   
-  if (isCleared === "true") {
-    appData = { trips: [] };
-  } else if (savedData) {
+  if (savedData) {
     appData = JSON.parse(savedData);
   } else {
     try {
@@ -44,9 +42,10 @@ function saveData() {
 // ===================== INIT =====================
 function init() {
   if (!currentTrip) {
+    // Jar data clear kela asel tar ha bhag dakhavla jail
     document.getElementById("summaryCard").innerHTML = `
-      <h4 style="margin-bottom: 10px;">No trip found.</h4>
-      <button class="btn-primary" onclick="openCreateTripModal()">+ Create New Trip</button>
+      <h4 style="margin-bottom: 15px; text-align: center; color: #4f46e5;">No trip found. (Data cleared or empty)</h4>
+      <button class="btn-primary" style="background: #4f46e5; font-size: 16px; padding: 12px;" onclick="openCreateTripModal()">+ Create New Trip</button>
     `;
     document.getElementById("expenseList").innerHTML = "";
     document.getElementById("ledgerContent").innerHTML = "";
@@ -134,8 +133,11 @@ function renderDashboard() {
   const perPerson = currentTrip.members.length ? total / currentTrip.members.length : 0;
   const { balance } = getMainCashierBalance();
 
-  document.getElementById("summaryCard").innerHTML = `
-    <h4>${currentTrip.name}</h4>
+   document.getElementById("summaryCard").innerHTML = `
+    <h4 style="display:flex; justify-content:space-between; align-items:center;">
+      <span>${currentTrip.name}</span>
+      <span onclick="openEditTripNameModal()" style="cursor:pointer; font-size:16px;" title="Edit Trip Name">✏️</span>
+    </h4>
     <div class="summary-row total"><span>Total Trip Expense</span><span>${money(total)}</span></div>
     <div class="summary-row"><span>Per Person Average</span><span>${money(perPerson)}</span></div>
     <div class="summary-row ${balance >= 0 ? "positive" : "negative"}">
@@ -231,7 +233,6 @@ function buildPersonLedger() {
     map[m.id] = { id: m.id, name: m.name, paid: 0, share: 0, expenses: [] };
   });
 
-  // १. प्रत्येकाने कॅशियरला किती पैसे जमा केले (Receive Entries)
   const txns = currentTrip.cashTransactions || [];
   txns.forEach(t => {
     if (t.type === 'receive' && map[t.memberId]) {
@@ -239,13 +240,10 @@ function buildPersonLedger() {
     }
   });
 
-  // २. प्रत्येकाने खर्च किती केला (Expenses)
   currentTrip.expenses.forEach((e) => {
-    // जर खर्च मेंबरने केला असेल तर त्याच्या 'paid' मध्ये ॲड होईल
     if (map[e.paidById]) {
       map[e.paidById].paid += e.amount; 
     }
-    // ३. प्रत्येकाचा खर्चातील वाटा (Split Share)
     const shares = calculateShares(e);
     Object.entries(shares).forEach(([id, amt]) => {
       if (map[id]) map[id].share += amt;
@@ -311,11 +309,9 @@ function openPersonDetail(personId) {
     e.paidById === personId || e.splitAmongIds.includes(personId)
   );
 
-  // १. सगळ्या एंट्रीजची एकूण बेरीज (Total Expense)
   let totalRelatedAmount = 0;
   relatedExpenses.forEach(e => totalRelatedAmount += e.amount);
 
-  // २. त्या व्यक्तीचा एकूण वाटा (Your Split)
   let totalPersonShare = 0;
   relatedExpenses.forEach(e => {
     const shares = calculateShares(e);
@@ -329,7 +325,6 @@ function openPersonDetail(personId) {
         ${isOwed ? 'Available Balance: ' + money(net) : (isOwing ? 'उधार (Owes): ' + money(-net) : 'Settled')}
       </div>
       <div style="margin-top:10px; font-size:14px; color:#666;">
-        <!-- ITHE EKUN BERIJ DAKHAVLI AHE -->
         Total Expense: <strong>${money(totalRelatedAmount)}</strong> | Your Split: <strong>${money(totalPersonShare)}</strong>
       </div>
     </div>
@@ -350,7 +345,6 @@ function openPersonDetail(personId) {
         <div class="ledger-row" style="flex-direction:column; align-items:flex-start; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:10px;">
           <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
             <span class="name">${e.description} (${e.category})</span>
-            <!-- ITHE TYA ENTRY CHA PERSON CHA VATA DAKHAVLA AHE -->
             <span class="amt" style="font-size:16px; font-weight:bold;">${money(myShare)}</span> 
           </div>
           <div class="sub" style="margin-top:4px;">
@@ -639,6 +633,35 @@ function openAddPersonModal() {
   document.getElementById("modalOverlay").classList.add("active");
 }
 
+// ---------- EDIT TRIP NAME ----------
+function openEditTripNameModal() {
+  history.pushState({ modal: true }, "", "");
+  document.getElementById("modalBox").innerHTML = `
+    <h3>Edit Trip Name</h3>
+    <label>New Name <input type="text" id="editTripNameInput" value="${currentTrip.name}" /></label>
+    <button class="btn-primary" onclick="saveTripName()">Update Name</button>
+    <button class="btn-sm outline" style="width:100%; margin-top:5px;" onclick="closeModal()">Cancel</button>
+  `;
+  document.getElementById("modalOverlay").classList.add("active");
+  
+  // इनपुटमध्ये आपोआप कर्सर फोकस व्हावा म्हणून
+  setTimeout(() => {
+    const input = document.getElementById("editTripNameInput");
+    if(input) input.focus();
+  }, 100);
+}
+
+function saveTripName() {
+  const newName = document.getElementById("editTripNameInput").value.trim();
+  if (!newName) return alert("Trip Name cannot be empty.");
+  
+  currentTrip.name = newName;
+  saveData(); // नवीन नाव सेव्ह करा
+  
+  closeModal();
+  renderDashboard(); // डॅशबोर्डवर नवीन नाव दाखवा
+}
+
 function openEditPersonModal(id) {
   history.pushState({ modal: true }, "", "");
   const p = currentTrip.members.find(m => m.id === id);
@@ -821,6 +844,7 @@ function openEditExpenseModal(id) {
   if (!exp) return;
 
   let options = `<option value="${CASHIER_ID}" ${exp.paidById === CASHIER_ID ? 'selected' : ''}>${CASHIER_NAME}</option>`;
+  
   options += currentTrip.members.map(m => 
     `<option value="${m.id}" ${m.id === exp.paidById ? 'selected' : ''}>${m.name}</option>`
   ).join("");
@@ -889,13 +913,11 @@ function deleteExpense(id) {
 function calculateSettlements() {
   const creditors = [], debtors = [];
 
-  // १. प्रत्येक मेंबरने किती पैसे दिले (Jama + Kharch) आणि त्याचा वाटा किती (Share) ते काढू
   const memberStats = {};
   currentTrip.members.forEach(m => {
     memberStats[m.id] = { name: m.name, paid: 0, share: 0 };
   });
 
-  // मेंबरने कॅशियरला दिलेले पैसे (Jama)
   const txns = currentTrip.cashTransactions || [];
   txns.forEach(t => {
     if (t.type === 'receive' && memberStats[t.memberId]) {
@@ -903,7 +925,6 @@ function calculateSettlements() {
     }
   });
 
-  // खर्च आणि स्प्लिट
   currentTrip.expenses.forEach(e => {
     if (memberStats[e.paidById]) {
       memberStats[e.paidById].paid += e.amount;
@@ -914,24 +935,19 @@ function calculateSettlements() {
     });
   });
 
-  // २. मेंबर्सचा Net Balance (Paid - Share)
   Object.values(memberStats).forEach(p => {
     const net = p.paid - p.share;
     if (net > 0.01) creditors.push({ name: p.name, amt: net });
     else if (net < -0.01) debtors.push({ name: p.name, amt: -net });
   });
 
-  // ३. कॅशियरचा हिशोब
   const { balance } = getMainCashierBalance();
   if (balance > 0.01) {
-    // कॅशियरकडे जास्त पैसे आहेत (त्याला परत मिळायचे आहेत)
     creditors.push({ name: CASHIER_NAME, amt: balance });
   } else if (balance < -0.01) {
-    // कॅशियरकडे पैसे कमी आहेत (उदा. -420, म्हणजे कॅशियरला 420 द्यायचे आहेत)
     debtors.push({ name: CASHIER_NAME, amt: -balance });
   }
 
-  // ४. आता कोण कुणाला देणार ते ठरवू
   creditors.sort((a, b) => b.amt - a.amt);
   debtors.sort((a, b) => b.amt - a.amt);
 
@@ -987,22 +1003,18 @@ function openSettingsModal() {
   history.pushState({ modal: true }, "", "");
   document.getElementById("settingsModal").classList.add("active"); 
   
-  // Settings madhil sagli buttons punha load kara (Jene index.html madhe chuk asli tari chalel)
   document.getElementById("settingsModal").querySelector('.modal-box').innerHTML = `
     <h3>⚙️ Settings</h3>
     <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
       
-      <!-- INSTALL APP BUTTON -->
       <button id="installAppBtn" class="btn-primary" style="background: #4f46e5; display: none;" onclick="installApp()">
         📲 Install App
       </button>
       
-      <!-- BACKUP BUTTON -->
       <button class="btn-primary" style="background: #16a34a;" onclick="backupData()">
         📥 Backup Data (Download JSON)
       </button>
 
-      <!-- RESTORE SECTION -->
       <div style="border: 1px solid #ccc; padding: 10px; border-radius: 8px; background: #f9f9f9;">
         <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold;">📤 Restore Data</p>
         <input type="file" id="restoreFile" accept=".json" style="font-size: 12px; width: 100%; margin-bottom: 8px;" />
@@ -1011,7 +1023,6 @@ function openSettingsModal() {
 
       <hr style="border: 0; border-top: 1px solid #eee; margin: 10px 0;" />
       
-      <!-- CLEAR DATA BUTTON -->
       <button class="btn-primary" style="background: #dc2626;" onclick="clearAllData()">
         🗑️ Clear All Data
       </button>
@@ -1019,10 +1030,71 @@ function openSettingsModal() {
     <button class="btn-sm outline" style="width: 100%; margin-top: 15px;" onclick="closeSettingsModal()">Close</button>
   `;
 
-  // Jar install event aadhi jhala asel tar button dakhav
-  if (deferredPrompt) {
-    document.getElementById("installAppBtn").style.display = "block";
+  if (window.deferredPrompt) {
+    const btn = document.getElementById("installAppBtn");
+    if(btn) btn.style.display = "block";
   }
+}
+
+function closeSettingsModal() { 
+  document.getElementById("settingsModal").classList.remove("active"); 
+  const restoreFile = document.getElementById("restoreFile");
+  if (restoreFile) restoreFile.value = ""; 
+}
+
+function backupData() {
+  const dataStr = JSON.stringify(appData, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `tripmithra_backup_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function restoreData() {
+  const file = document.getElementById("restoreFile").files[0];
+  if (!file) return alert("Please select a .json backup file.");
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const parsedData = JSON.parse(e.target.result);
+      if (!parsedData.trips) throw new Error("Invalid file format.");
+      appData = parsedData;
+      currentTrip = appData.trips[0] || null;
+      if (currentTrip && !currentTrip.cashTransactions) currentTrip.cashTransactions = [];
+      saveData();
+      if (currentTrip) { init(); alert("✅ Data restored!"); } 
+      else { alert("✅ Restored but no trips found."); location.reload(); }
+      closeSettingsModal();
+    } catch (err) { alert("❌ Restore failed: " + err.message); }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  const confirm1 = confirm("⚠️ WARNING: This will delete all Members, Expenses, and Cash Entries of this trip. Are you sure?");
+  if (!confirm1) return;
+  const confirm2 = prompt("Type 'DELETE' to confirm:");
+  if (confirm2 !== "DELETE") return alert("Clear data cancelled.");
+
+  if (currentTrip) {
+    // फक्त खर्च, मेंबर्स आणि कॅश एंट्रीज रिकाम्या करा. ट्रीपचं नाव तसंच ठेवा.
+    currentTrip.members = [];
+    currentTrip.expenses = [];
+    currentTrip.cashTransactions = [];
+    
+    saveData(); // नवीन रिकामा डेटा सेव्ह करा
+  }
+
+  closeSettingsModal();
+  alert("🗑️ Trip data cleared successfully! (Trip name & settings retained)");
+  
+  // पेज रिफ्रेश न करता थेट डॅशबोर्ड अपडेट करा
+  init(); 
 }
 
 // ===================== BACK SHORTCUT & MOBILE BACK HANDLING =====================
@@ -1127,66 +1199,65 @@ function createNewTrip() {
   init(); 
 }
 
-// ===================== START =====================
-loadData();
-
-// ===================== ENTER KEY NAVIGATION (Next Input) =====================
+// ===================== ENTER KEY NAVIGATION =====================
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter') {
     const activeEl = document.activeElement;
     
-    // फक्त इनपुट आणि सेलेक्ट बॉक्सवर काम करा (बटणांवर नाही)
     if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) {
-      e.preventDefault(); // फॉर्म सबमिट होण्यापासून रोखा
+      e.preventDefault(); 
 
-      // सध्याच्या मोडल/पेजमधील सगळे इनपुट आणि सेलेक्ट घ्या
       const container = activeEl.closest('.modal-box') || activeEl.closest('.tab-content') || document;
       const inputs = Array.from(container.querySelectorAll('input:not([type="hidden"]):not([type="checkbox"]), select'));
       
       const index = inputs.indexOf(activeEl);
       
       if (index > -1 && index < inputs.length - 1) {
-        // पुढच्या इनपुटवर फोकस करा
         inputs[index + 1].focus();
       } else if (index === inputs.length - 1) {
-        // जर शेवटचं इनपुट असेल तर 'Save' किंवा 'Create' बटणावर क्लिक करा
         const submitBtn = container.querySelector('.btn-primary');
         if (submitBtn) submitBtn.click();
       }
     }
   }
 });
-// ===================== PWA INSTALL LOGIC =====================
-let deferredPrompt;
-const installAppBtn = document.getElementById('installAppBtn');
 
-// जेव्हा ब्राउझर ॲप इन्स्टॉल करण्यासाठी तयार असेल तेव्हा हे इव्हेंट रन होतं
+// ===================== PWA INSTALL LOGIC =====================
+window.deferredPrompt = null;
+
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
-  deferredPrompt = e;
-  // बटण दाखवा
-  if (installAppBtn) {
-    installAppBtn.style.display = 'block';
-  }
+  window.deferredPrompt = e;
+  const btn = document.getElementById('installAppBtn');
+  if (btn) btn.style.display = 'block';
 });
 
 function installApp() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then((choiceResult) => {
+  if (window.deferredPrompt) {
+    window.deferredPrompt.prompt();
+    window.deferredPrompt.userChoice.then((choiceResult) => {
       if (choiceResult.outcome === 'accepted') {
         console.log('User accepted the install prompt');
       }
-      deferredPrompt = null;
-      if (installAppBtn) installAppBtn.style.display = 'none';
+      window.deferredPrompt = null;
+      const btn = document.getElementById('installAppBtn');
+      if (btn) btn.style.display = 'none';
     });
   } else {
-    alert("तुमचा ब्राउझर थेट इन्स्टॉलला सपोर्ट करत नाही किंवा ॲप आधीच इन्स्टॉल झालं आहे. कृपया ब्राउझरच्या उजव्या कोपऱ्यातील ३ ठिपक्यांवर क्लिक करून 'Add to Home Screen' निवडा.");
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isIOS) {
+      alert("iPhone वर इन्स्टॉल करण्यासाठी: खाली 'Share' आयकॉनवर क्लिक करा आणि 'Add to Home Screen' निवडा.");
+    } else {
+      alert("ॲप इन्स्टॉल करण्यासाठी: ब्राउझरच्या उजव्या कोपऱ्यातील ३ ठिपक्यांवर (⋮) क्लिक करा आणि 'Install App' किंवा 'Add to Home Screen' निवडा.");
+    }
   }
 }
 
-// जेव्हा ॲप इन्स्टॉल होईल तेव्हा बटण लपवून टाका
 window.addEventListener('appinstalled', () => {
-  if (installAppBtn) installAppBtn.style.display = 'none';
-  deferredPrompt = null;
+  const btn = document.getElementById('installAppBtn');
+  if (btn) btn.style.display = 'none';
+  window.deferredPrompt = null;
 });
+
+// ===================== START =====================
+loadData();
